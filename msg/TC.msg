@@ -1,0 +1,17 @@
+uint16 vehicleSpeed
+uint16 motorSpeed
+uint16 motorCurrent
+uint16 suspensionRightRear
+uint16 suspensionLeftRear
+uint16 wheelSpeedLeftfront
+uint16 wheelSpeedRightfront
+uint16 wheelSpeedLeftRear
+uint16 wheelSpeedRightRear
+uint8 inverterTemperature
+uint8 motorTemperature
+int16 gyroX
+int16 gyroY
+int16 gyroZ
+int16 accX
+int16 accY
+int16 accZ 

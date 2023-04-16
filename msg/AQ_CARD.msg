@@ -1,0 +1,10 @@
+uint16 brakePressureFront
+uint16 brakePressureRear
+uint16 suspensionLeftFront
+uint16 suspensionRightFront
+int16 gyroX
+int16 gyroY
+int16 gyroZ
+int16 accX
+int16 accY
+int16 accZ
