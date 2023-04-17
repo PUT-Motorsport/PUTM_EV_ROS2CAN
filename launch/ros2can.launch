@@ -1,0 +1,3 @@
+<launch>
+  <node name="PUTM_EV_ROS2CAN_node" pkg="PUTM_EV_ROS2CAN" type="PUTM_EV_ROS2CAN_node" output="screen"/>
+</launch>
