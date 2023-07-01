@@ -1,10 +1,12 @@
-#include "../PUTM_DV_CAN_LIBRARY/Inc/putm_can_interface.hpp"
+#include "../PUTM_DV_CAN_LIBRARY_MULTIPLE_SOCKETS/include/can_rx.hpp"
 #include "ros/ros.h"
 #include "PUTM_EV_ROS2CAN/APPS1.h"
 #include "PUTM_EV_ROS2CAN/AQ_CARD.h"
 #include "PUTM_EV_ROS2CAN/BMSHV.h"
 #include "PUTM_EV_ROS2CAN/BMSLV.h"
 #include "PUTM_EV_ROS2CAN/TC.h"
+
+PUTM_CAN::CanRx<can_frame> *received_frame;
 
 int main(int argc, char *argv[])
 {  
@@ -18,32 +20,31 @@ int main(int argc, char *argv[])
     ros::Publisher BMSLV_Publisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSLV>   ("BmsLv_Data", 5);
     ros::Publisher TC_Publisher         = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Tc_Data", 5);
 
-    PUTM_CAN::CAN can;
-
-    if(can.connect() != PUTM_CAN::CanState::CAN_OK)
+    //CanRX goes out of scope
+    try 
     {
-        ROS_ERROR("Error while connecting to CAN socket");
-        return 0;
-    }       
-    else
+        received_frame = new PUTM_CAN::CanRx<can_frame>("can0", PUTM_CAN::NO_TIMEOUT);
+        ROS_INFO("[ROS2CAN] Connected to CAN socket");
+    }
+    catch(std::runtime_error &err)
     {
-        ROS_INFO("Connected to CAN socket");
+        ROS_ERROR("[ROS2CAN] Error while connecting to CAN socket");
+        std::cout << err.what() << '\n';
     }
 
     //main loop
 
     for(;;)
     {
-        can_frame frtmp;
-        can.structure_receive_random(frtmp, PUTM_CAN::NO_TIMEOUT);
-
+        try{
+            can_frame random_device_data = received_frame->receive();
         //switch case.
-        switch(frtmp.can_id)
+        switch(random_device_data.can_id)
         {
             case PUTM_CAN::APPS_MAIN_CAN_ID:
             {
                 PUTM_CAN::Apps_main appstmp;
-                memcpy(&appstmp, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&appstmp, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::APPS1 apps;
 
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
             // case PUTM_CAN::AQ_ACCELERATION_CAN_ID:
             // {
             //     PUTM_CAN::AQ_acceleration aqacctmp;
-            //     memcpy(&aqacctmp, &frtmp.data, sizeof(frtmp.data));
+            //     memcpy(&aqacctmp, &random_device_data.data, sizeof(random_device_data.data));
 
             // }
             // break;
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
             // case PUTM_CAN::AQ_GYROSCOPE_CAN_ID:
             // {
             //     PUTM_CAN::AQ_gyroscope aqgytmp;
-            //     memcpy(&aqgytmp, &frtmp.data, sizeof(frtmp.data));
+            //     memcpy(&aqgytmp, &random_device_data.data, sizeof(random_device_data.data));
 
             // }
             // break;
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
             // case PUTM_CAN::AQ_MAIN_CAN_ID:
             // {
             //     PUTM_CAN::AQ_main aqtmp;
-            //     memcpy(&aqtmp, &frtmp.data, sizeof(frtmp.data));
+            //     memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
 
             // }
             // break;
@@ -82,7 +83,7 @@ int main(int argc, char *argv[])
             // case PUTM_CAN::AQ_TS_BUTTON_CAN_ID:
             // {
             //     PUTM_CAN::AQ_main aqtmp;
-            //     memcpy(&aqtmp, &frtmp.data, sizeof(frtmp.data));
+            //     memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
 
             // }
             // break;
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::BMS_LV_MAIN_CAN_ID:
             {
                 PUTM_CAN::BMS_LV_main bmslv;
-                memcpy(&bmslv, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&bmslv, &random_device_data.data, sizeof(random_device_data.data));
 
 
                 PUTM_EV_ROS2CAN::BMSLV bmslvros;
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::BMS_LV_TEMPERATURE_CAN_ID:
             {
                 PUTM_CAN::BMS_LV_temperature bmslvtemps;
-                memcpy(&bmslvtemps, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&bmslvtemps, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::BMS_HV_MAIN_CAN_ID:
             {
                 PUTM_CAN::BMS_HV_main bmshvmain;
-                memcpy(&bmshvmain, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&bmshvmain, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::BMSHV bmshvros;
 
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::LAP_TIMER_ACC_TIME_CAN_ID:
             {
                 PUTM_CAN::Lap_timer_Acc_time laptimeracc;
-                memcpy(&laptimeracc, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&laptimeracc, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::LAP_TIMER_LAP_TIME_CAN_ID:
             {
                 PUTM_CAN::Lap_timer_Lap_time laptimerlap;
-                memcpy(&laptimerlap, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&laptimerlap, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -164,7 +165,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::LAP_TIMER_MAIN_CAN_ID:
             {
                 PUTM_CAN::Lap_timer_Main laptimermain;
-                memcpy(&laptimermain, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&laptimermain, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -172,7 +173,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::LAP_TIMER_SECTOR_CAN_ID:
             {
                 PUTM_CAN::Lap_timer_Lap_time laptimersec;
-                memcpy(&laptimersec, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&laptimersec, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -180,7 +181,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::LAP_TIMER_SKIDPAD_TIME_CAN_ID:
             {
                 PUTM_CAN::Lap_timer_Lap_time laptimerskid;
-                memcpy(&laptimerskid, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&laptimerskid, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::SF_MAIN_CAN_ID:
             {
                 PUTM_CAN::SF_main sfmain;
-                memcpy(&sfmain, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&sfmain, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -196,7 +197,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::SF_SAFETY_CAN_ID:
             {
                 PUTM_CAN::SF_safety sfsafety;
-                memcpy(&sfsafety, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&sfsafety, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -204,7 +205,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_IMU_ACC_CAN_ID:
             {
                 PUTM_CAN::TC_imu_acc tc_imu_acc;
-                memcpy(&tc_imu_acc, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_imu_acc, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::TC tcros;
 
@@ -219,7 +220,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_IMU_GYRO_CAN_ID:
             {
                 PUTM_CAN::TC_imu_gyro tc_imu_gyro;
-                memcpy(&tc_imu_gyro, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_imu_gyro, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::TC tcros;
 
@@ -235,7 +236,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_MAIN_CAN_ID:
             {
                 PUTM_CAN::TC_main tc_main;
-                memcpy(&tc_main, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_main, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::TC tcros;
 
@@ -252,7 +253,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_REAR_SUSPENSION_CAN_ID:
             {
                 PUTM_CAN::TC_rear_suspension tc_rear;
-                memcpy(&tc_rear, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_rear, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::TC tcros;
 
@@ -268,7 +269,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_TEMPERATURES_CAN_ID:
             {
                 PUTM_CAN::TC_temperatures tc_temperatures;
-                memcpy(&tc_temperatures, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_temperatures, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -277,7 +278,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::TC_WHEEL_VELOCITIES_CAN_ID:
             {
                 PUTM_CAN::TC_wheel_velocities tc_wheels;
-                memcpy(&tc_wheels, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&tc_wheels, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::TC tcros;
 
@@ -297,7 +298,7 @@ int main(int argc, char *argv[])
             case PUTM_CAN::WHEELTEMP_MAIN_CAN_ID:
             {
                 PUTM_CAN::WheelTemp_main wheel_tmp_main;
-                memcpy(&wheel_tmp_main, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&wheel_tmp_main, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
@@ -306,10 +307,15 @@ int main(int argc, char *argv[])
             case PUTM_CAN::YAWPROBE_AIR_FLOW_CAN_ID:
             {
                 PUTM_CAN::YawProbe_air_flow yawprobe;
-                memcpy(&yawprobe, &frtmp.data, sizeof(frtmp.data));
+                memcpy(&yawprobe, &random_device_data.data, sizeof(random_device_data.data));
 
             }
             break;
+        }
+        }
+        catch(std::runtime_error &err){
+            ROS_ERROR("[ROS2CAN] Error while receiving CAN Frame");
+            std::cout << err.what() << '\n';
         }
             //done.
     }
