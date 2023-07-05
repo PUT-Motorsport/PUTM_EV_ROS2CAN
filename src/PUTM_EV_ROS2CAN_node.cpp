@@ -10,7 +10,7 @@ PUTM_CAN::CanRx<can_frame> *received_frame;
 
 int main(int argc, char *argv[])
 {  
-    ros::init(argc, argv, "Telemetry");
+    ros::init(argc, argv, "ROS2CAN");
 
     ros::NodeHandle nh;
 
@@ -56,37 +56,41 @@ int main(int argc, char *argv[])
             }
             break;
 
-            // case PUTM_CAN::AQ_ACCELERATION_CAN_ID:
-            // {
-            //     PUTM_CAN::AQ_acceleration aqacctmp;
-            //     memcpy(&aqacctmp, &random_device_data.data, sizeof(random_device_data.data));
+            case PUTM_CAN::AQ_ACCELERATION_CAN_ID:
+            {
+                PUTM_CAN::AQ_acceleration aqacctmp;
+                memcpy(&aqacctmp, &random_device_data.data, sizeof(random_device_data.data));
 
-            // }
-            // break;
+            }
+            break;
 
-            // case PUTM_CAN::AQ_GYROSCOPE_CAN_ID:
-            // {
-            //     PUTM_CAN::AQ_gyroscope aqgytmp;
-            //     memcpy(&aqgytmp, &random_device_data.data, sizeof(random_device_data.data));
+            case PUTM_CAN::AQ_GYROSCOPE_CAN_ID:
+            {
+                PUTM_CAN::AQ_gyroscope aqgytmp;
+                memcpy(&aqgytmp, &random_device_data.data, sizeof(random_device_data.data));
 
-            // }
-            // break;
+            }
+            break;
 
-            // case PUTM_CAN::AQ_MAIN_CAN_ID:
-            // {
-            //     PUTM_CAN::AQ_main aqtmp;
-            //     memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
+            case PUTM_CAN::AQ_MAIN_CAN_ID:
+            {
+                PUTM_CAN::AQ_main aqtmp;
+                memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
 
-            // }
-            // break;
+                PUTM_EV_ROS2CAN::AQ_CARD aqcard;
+                aqcard.brakePressureFront = aqtmp.brake_pressure_front ;
+                AQ_Card_Publisher.publish(aqcard);
 
-            // case PUTM_CAN::AQ_TS_BUTTON_CAN_ID:
-            // {
-            //     PUTM_CAN::AQ_main aqtmp;
-            //     memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
+            }
+            break;
 
-            // }
-            // break;
+            case PUTM_CAN::AQ_TS_BUTTON_CAN_ID:
+            {
+                PUTM_CAN::AQ_main aqtmp;
+                memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
+
+            }
+            break;
 
             case PUTM_CAN::BMS_LV_MAIN_CAN_ID:
             {
