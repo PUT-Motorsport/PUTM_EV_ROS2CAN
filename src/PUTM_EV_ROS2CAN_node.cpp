@@ -5,6 +5,8 @@
 #include "PUTM_EV_ROS2CAN/BMSHV.h"
 #include "PUTM_EV_ROS2CAN/BMSLV.h"
 #include "PUTM_EV_ROS2CAN/TC.h"
+#include "PUTM_EV_ROS2CAN/Odrive.h"
+#include "PUTM_EV_ROS2CAN/yawprobe.h"
 
 PUTM_CAN::CanRx<can_frame> *received_frame;
 
@@ -14,11 +16,12 @@ int main(int argc, char *argv[])
 
     ros::NodeHandle nh;
 
-    ros::Publisher APPS_Publisher       = nh.advertise<PUTM_EV_ROS2CAN::APPS1>   ("Apps_Data", 5);
-    ros::Publisher AQ_Card_Publisher    = nh.advertise<PUTM_EV_ROS2CAN::AQ_CARD> ("AQ_Card_Data", 5);
-    ros::Publisher BMSHV_Publisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSHV>   ("BmsHv_Data", 5);
-    ros::Publisher BMSLV_Publisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSLV>   ("BmsLv_Data", 5);
-    ros::Publisher TC_Publisher         = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Tc_Data", 5);
+    ros::Publisher AppsPublisher       = nh.advertise<PUTM_EV_ROS2CAN::APPS1>   ("Apps data", 5);
+    ros::Publisher AqCardPublisher     = nh.advertise<PUTM_EV_ROS2CAN::AQ_CARD> ("Aq card data", 5);
+    ros::Publisher BmshvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSHV>   ("BMS HV Data", 5);
+    ros::Publisher BmslvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSLV>   ("BMS LV Data", 5);
+    ros::Publisher TcPublisher         = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Tracion Control Data", 5);
+    ros::Publisher OdrivePublisher     = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Odrive Data", 5);
 
     //CanRX goes out of scope
     try 
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
                 apps.counter        = appstmp.counter;
                 apps.difference     = appstmp.position_diff;
 
-                APPS_Publisher.publish(apps);
+                AppsPublisher.publish(apps);
             }
             break;
 
@@ -79,7 +82,7 @@ int main(int argc, char *argv[])
 
                 PUTM_EV_ROS2CAN::AQ_CARD aqcard;
                 aqcard.brakePressureFront = aqtmp.brake_pressure_front ;
-                AQ_Card_Publisher.publish(aqcard);
+                AqCardPublisher.publish(aqcard);
 
             }
             break;
@@ -105,7 +108,7 @@ int main(int argc, char *argv[])
                 bmslvros.lvVoltage             = bmslv.voltage_sum;
                 bmslvros.soc                   = bmslv.soc;
 
-                BMSLV_Publisher.publish(bmslvros);
+                BmslvPublisher.publish(bmslvros);
 
             }
             break;
@@ -131,10 +134,7 @@ int main(int argc, char *argv[])
                 bmshvros.soc                = bmshvmain.soc;
                 bmshvros.averageTemperature = bmshvmain.temp_avg;
 
-                BMSHV_Publisher.publish(bmshvros);
-
-
-
+                BmshvPublisher.publish(bmshvros);
             }
             break;
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
                 tcros.accY  = tc_imu_acc.acc_y;
                 tcros.accZ  = tc_imu_acc.acc_z;
 
-                TC_Publisher.publish(tcros);
+                TcPublisher.publish(tcros);
             }
             break;
 
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
                 tcros.gyroY = tc_imu_gyro.gyro_y;
                 tcros.gyroZ = tc_imu_gyro.gyro_z;
 
-                TC_Publisher.publish(tcros);
+                TcPublisher.publish(tcros);
             }
             break;
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
                 tcros.motorSpeed    = tc_main.engine_speed;;
                 tcros.motorCurrent  = tc_main.motor_current;
 
-                TC_Publisher.publish(tcros);
+                TcPublisher.publish(tcros);
 
             }
             break;
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
                 tcros.suspensionRightRear  = tc_rear.adc_susp_right;
                 tcros.suspensionLeftRear   = tc_rear.adc_susp_left;
 
-                TC_Publisher.publish(tcros);
+                TcPublisher.publish(tcros);
 
             }
             break;
@@ -291,10 +291,7 @@ int main(int argc, char *argv[])
                 tcros.wheelSpeedLeftRear    = tc_wheels.left_rear; 
                 tcros.wheelSpeedRightRear   = tc_wheels.right_rear; 
 
-                TC_Publisher.publish(tcros);
-
-
-
+                TcPublisher.publish(tcros);
             }
             break;
 
@@ -303,16 +300,26 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::WheelTemp_main wheel_tmp_main;
                 memcpy(&wheel_tmp_main, &random_device_data.data, sizeof(random_device_data.data));
-
             }
             break;
-
 
             case PUTM_CAN::YAWPROBE_AIR_FLOW_CAN_ID:
             {
                 PUTM_CAN::YawProbe_air_flow yawprobe;
                 memcpy(&yawprobe, &random_device_data.data, sizeof(random_device_data.data));
+            }
+            break;
 
+            case PUTM_CAN::ODRIVE_HEARTBEAT_CAN_ID:
+            {
+                PUTM_CAN::Odrive_Heartbeat odrivehbeat;
+                memcpy(&odrivehbeat, &random_device_data.data, sizeof(random_device_data.data));
+
+                PUTM_EV_ROS2CAN::Odrive odrive;
+                odrive.error = odrivehbeat.Axis_Error;
+                odrive.state = odrivehbeat.Axis_State;
+
+                OdrivePublisher.publish(odrive);
             }
             break;
         }

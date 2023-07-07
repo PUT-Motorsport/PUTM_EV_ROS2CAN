@@ -56,6 +56,8 @@ add_message_files(
   BMSHV.msg
   AQ_CARD.msg
   TC.msg
+  Odrive.msg
+  yawprobe.msg
  )
 ## Generate services in the 'srv' folder
 # add_service_files(
