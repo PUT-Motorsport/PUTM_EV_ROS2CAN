@@ -16,12 +16,12 @@ int main(int argc, char *argv[])
 
     ros::NodeHandle nh;
 
-    ros::Publisher AppsPublisher       = nh.advertise<PUTM_EV_ROS2CAN::APPS1>   ("Apps data", 5);
-    ros::Publisher AqCardPublisher     = nh.advertise<PUTM_EV_ROS2CAN::AQ_CARD> ("Aq card data", 5);
-    ros::Publisher BmshvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSHV>   ("BMS HV Data", 5);
-    ros::Publisher BmslvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSLV>   ("BMS LV Data", 5);
-    ros::Publisher TcPublisher         = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Tracion Control Data", 5);
-    ros::Publisher OdrivePublisher     = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Odrive Data", 5);
+    ros::Publisher AppsPublisher       = nh.advertise<PUTM_EV_ROS2CAN::APPS1>   ("Apps_data", 5);
+    ros::Publisher AqCardPublisher     = nh.advertise<PUTM_EV_ROS2CAN::AQ_CARD> ("Aq_card_data", 5);
+    ros::Publisher BmshvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSHV>   ("BMS_HV_Data", 5);
+    ros::Publisher BmslvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BMSLV>   ("BMS_LV_Data", 5);
+    ros::Publisher TcPublisher         = nh.advertise<PUTM_EV_ROS2CAN::TC>      ("Tracion_Control_Data", 5);
+    ros::Publisher OdrivePublisher     = nh.advertise<PUTM_EV_ROS2CAN::Odrive>      ("OdriveDataCAN", 5);
 
     //CanRX goes out of scope
     try 
@@ -316,8 +316,8 @@ int main(int argc, char *argv[])
                 memcpy(&odrivehbeat, &random_device_data.data, sizeof(random_device_data.data));
 
                 PUTM_EV_ROS2CAN::Odrive odrive;
-                odrive.error = odrivehbeat.Axis_Error;
-                odrive.state = odrivehbeat.Axis_State;
+                odrive.odrive_errors = odrivehbeat.Axis_Error;
+                odrive.odrive_state = odrivehbeat.Axis_State;
 
                 OdrivePublisher.publish(odrive);
             }
