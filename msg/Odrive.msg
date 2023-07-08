@@ -1,4 +1,4 @@
-float32 odrive_position
+float32 EncoderEstimation
 float32 front_wheels_angle
 float32 desired_steer_angle
 float32 iq_current

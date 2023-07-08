@@ -51,13 +51,13 @@ add_message_files(
   DIRECTORY
   msg
   FILES
-  APPS1.msg
-  BMSLV.msg
-  BMSHV.msg
-  AQ_CARD.msg
-  TC.msg
+  Apps.msg
+  BmsLv.msg
+  BmsHv.msg
+  AqCard.msg
+  TractionControl.msg
   Odrive.msg
-  yawprobe.msg
+  Yawprobe.msg
  )
 ## Generate services in the 'srv' folder
 # add_service_files(
