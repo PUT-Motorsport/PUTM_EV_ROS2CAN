@@ -1,4 +1,4 @@
-#include "../PUTM_DV_CAN_LIBRARY_MULTIPLE_SOCKETS/include/can_rx.hpp"
+#include "../PUTM_DV_CAN_LIBRARY_RAII/include/can_rx.hpp"
 #include "ros/ros.h"
 #include "PUTM_EV_ROS2CAN/Apps.h"
 #include "PUTM_EV_ROS2CAN/AqCard.h"
@@ -7,8 +7,7 @@
 #include "PUTM_EV_ROS2CAN/TractionControl.h"
 #include "PUTM_EV_ROS2CAN/Odrive.h"
 #include "PUTM_EV_ROS2CAN/Yawprobe.h"
-
-PUTM_CAN::CanRx<can_frame> *received_frame;
+#include "PUTM_EV_ROS2CAN/AqTsButton.h"
 
 int main(int argc, char *argv[])
 {  
@@ -16,41 +15,36 @@ int main(int argc, char *argv[])
 
     ros::NodeHandle nh;
 
-    ros::Publisher AppsPublisher       = nh.advertise<PUTM_EV_ROS2CAN::Apps>   ("Apps_data", 5);
-    ros::Publisher AqCardPublisher     = nh.advertise<PUTM_EV_ROS2CAN::AqCard> ("Aq_card_data", 5);
-    ros::Publisher BmshvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BmsHv>   ("BMS_HV_Data", 5);
-    ros::Publisher BmslvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BmsLv>   ("BMS_LV_Data", 5);
-    ros::Publisher TcPublisher         = nh.advertise<PUTM_EV_ROS2CAN::TractionControl>      ("Tracion_Control_Data", 5);
-    ros::Publisher OdrivePublisher     = nh.advertise<PUTM_EV_ROS2CAN::Odrive>      ("OdriveDataCAN", 5);
+    ros::Publisher AppsPublisher       = nh.advertise<PUTM_EV_ROS2CAN::Apps>            ("Apps_data", 5);
+    ros::Publisher AqCardPublisher     = nh.advertise<PUTM_EV_ROS2CAN::AqCard>          ("Aq_card_data", 5);
+    ros::Publisher BmshvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BmsHv>           ("BMS_HV_Data", 5);
+    ros::Publisher BmslvPublisher      = nh.advertise<PUTM_EV_ROS2CAN::BmsLv>           ("BMS_LV_Data", 5);
+    ros::Publisher TcPublisher         = nh.advertise<PUTM_EV_ROS2CAN::TractionControl> ("Tracion_Control_Data", 5);
+    ros::Publisher OdrivePublisher     = nh.advertise<PUTM_EV_ROS2CAN::Odrive>          ("OdriveDataCAN", 5);
+    ros::Publisher AqTsButtonCardPublisher = nh.advertise<PUTM_EV_ROS2CAN::AqTsButton>  ("AqTsButton", 5);
+
+    PUTM_EV_ROS2CAN::Odrive odrive;
+    PUTM_EV_ROS2CAN::TractionControl tcros;
+    PUTM_EV_ROS2CAN::BmsHv bmshvros;
+    PUTM_EV_ROS2CAN::Apps apps;
+    PUTM_EV_ROS2CAN::BmsLv bmslvros;
 
     //CanRX goes out of scope
-    try 
-    {
-        received_frame = new PUTM_CAN::CanRx<can_frame>("can0", PUTM_CAN::NO_TIMEOUT);
-        ROS_INFO("[ROS2CAN] Connected to CAN socket");
-    }
-    catch(std::runtime_error &err)
-    {
-        ROS_ERROR("[ROS2CAN] Error while connecting to CAN socket");
-        std::cout << err.what() << '\n';
-    }
+    PUTM_CAN::CanRx can_rx("slcan0", PUTM_CAN::NO_TIMEOUT);
+    can_frame frame = can_rx.receive();
 
     //main loop
 
     for(;;)
     {
-        try{
-            can_frame random_device_data = received_frame->receive();
         //switch case.
+        can_frame random_device_data = can_rx.receive();
         switch(random_device_data.can_id)
         {
             case PUTM_CAN::APPS_MAIN_CAN_ID:
             {
                 PUTM_CAN::Apps_main appstmp;
                 memcpy(&appstmp, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::Apps apps;
-
                 apps.pedalPosition  = appstmp.pedal_position;
                 apps.counter        = appstmp.counter;
                 apps.difference     = appstmp.position_diff;
@@ -59,39 +53,15 @@ int main(int argc, char *argv[])
             }
             break;
 
-            case PUTM_CAN::AQ_ACCELERATION_CAN_ID:
-            {
-                PUTM_CAN::AQ_acceleration aqacctmp;
-                memcpy(&aqacctmp, &random_device_data.data, sizeof(random_device_data.data));
-
-            }
-            break;
-
-            case PUTM_CAN::AQ_GYROSCOPE_CAN_ID:
-            {
-                PUTM_CAN::AQ_gyroscope aqgytmp;
-                memcpy(&aqgytmp, &random_device_data.data, sizeof(random_device_data.data));
-
-            }
-            break;
-
-            case PUTM_CAN::AQ_MAIN_CAN_ID:
-            {
-                PUTM_CAN::AQ_main aqtmp;
-                memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::AqCard aqcard;
-                aqcard.brakePressureFront = aqtmp.brake_pressure_front ;
-                AqCardPublisher.publish(aqcard);
-
-            }
-            break;
-
             case PUTM_CAN::AQ_TS_BUTTON_CAN_ID:
             {
-                PUTM_CAN::AQ_main aqtmp;
-                memcpy(&aqtmp, &random_device_data.data, sizeof(random_device_data.data));
+                PUTM_CAN::AQ_ts_button aqTs;
+                memcpy(&aqTs, &random_device_data.data, sizeof(random_device_data.data));
 
+                PUTM_EV_ROS2CAN::AqTsButton aqcard;
+
+                aqcard.AqTsbutton = aqTs.placeholder;
+                AqTsButtonCardPublisher.publish(aqcard);
             }
             break;
 
@@ -99,10 +69,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::BMS_LV_main bmslv;
                 memcpy(&bmslv, &random_device_data.data, sizeof(random_device_data.data));
-
-
-                PUTM_EV_ROS2CAN::BmsLv bmslvros;
-
                 bmslvros.averageTemperature    = bmslv.temp_avg;
                 bmslvros.current               = bmslv.current;
                 bmslvros.lvVoltage             = bmslv.voltage_sum;
@@ -125,9 +91,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::BMS_HV_main bmshvmain;
                 memcpy(&bmshvmain, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::BmsHv bmshvros;
-
                 bmshvros.hvVoltage          = bmshvmain.voltage_sum;
                 bmshvros.current            = bmshvmain.current;
                 bmshvros.maxTemperature     = bmshvmain.temp_max;
@@ -210,9 +173,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::TC_imu_acc tc_imu_acc;
                 memcpy(&tc_imu_acc, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::TractionControl tcros;
-
                 tcros.accX  = tc_imu_acc.acc_x;
                 tcros.accY  = tc_imu_acc.acc_y;
                 tcros.accZ  = tc_imu_acc.acc_z;
@@ -225,9 +185,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::TC_imu_gyro tc_imu_gyro;
                 memcpy(&tc_imu_gyro, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::TractionControl tcros;
-
                 tcros.gyroX = tc_imu_gyro.gyro_x;
                 tcros.gyroY = tc_imu_gyro.gyro_y;
                 tcros.gyroZ = tc_imu_gyro.gyro_z;
@@ -241,9 +198,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::TC_main tc_main;
                 memcpy(&tc_main, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::TractionControl tcros;
-
                 tcros.vehicleSpeed  = tc_main.vehicle_speed;
                 tcros.motorSpeed    = tc_main.engine_speed;;
                 tcros.motorCurrent  = tc_main.motor_current;
@@ -258,9 +212,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::TC_rear_suspension tc_rear;
                 memcpy(&tc_rear, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::TractionControl tcros;
-
                 tcros.suspensionRightRear  = tc_rear.adc_susp_right;
                 tcros.suspensionLeftRear   = tc_rear.adc_susp_left;
 
@@ -283,9 +234,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::TC_wheel_velocities tc_wheels;
                 memcpy(&tc_wheels, &random_device_data.data, sizeof(random_device_data.data));
-
-                PUTM_EV_ROS2CAN::TractionControl tcros;
-
                 tcros.wheelSpeedLeftfront   = tc_wheels.left_front; 
                 tcros.wheelSpeedRightfront  = tc_wheels.right_front;
                 tcros.wheelSpeedLeftRear    = tc_wheels.left_rear; 
@@ -315,9 +263,10 @@ int main(int argc, char *argv[])
                 PUTM_CAN::Odrive_Heartbeat odrivehbeat;
                 memcpy(&odrivehbeat, &random_device_data.data, sizeof(random_device_data.data));
 
-                PUTM_EV_ROS2CAN::Odrive odrive;
-                odrive.odrive_errors = odrivehbeat.Axis_Error;
-                odrive.odrive_state = odrivehbeat.Axis_State;
+                odrive.OdriveAxisError = odrivehbeat.Axis_Error;
+                odrive.OdriveAxisState = odrivehbeat.Axis_State;
+
+                //ROS_INFO("Odrive state: %i, error: %i", odrivehbeat.Axis_State, odrivehbeat.Axis_Error);
 
                 OdrivePublisher.publish(odrive);
             }
@@ -327,18 +276,43 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::Odrive_Get_Encoder_Estimation enc;
                 memcpy(&enc, &random_device_data.data, sizeof(random_device_data.data));
-                
-                PUTM_EV_ROS2CAN::Odrive odrive;
+            
                 odrive.EncoderEstimation = enc.Pos_Estimate;
+                OdrivePublisher.publish(odrive);
+            }
+            break;
+
+            case PUTM_CAN::ODRIVE_GET_MOTOR_ERROR_CAN_ID:
+            {
+                PUTM_CAN::Odrive_Get_Motor_Error merror;
+                memcpy(&merror, &random_device_data.data, sizeof(random_device_data.data));
+                ROS_INFO("ODrive motor error");
+                odrive.MotorError = merror.Active_Errors;
+                odrive.MotorDisarmReason = merror.Disarm_Reason;
 
                 OdrivePublisher.publish(odrive);
             }
+            break;
+
+            case PUTM_CAN::ODRIVE_GET_ENCODER_ERROR_CAN_ID:
+            {
+                PUTM_CAN::Odrive_Get_Motor_Error eerror;
+                memcpy(&eerror, &random_device_data.data, sizeof(random_device_data.data));
+                ROS_INFO("ODrive encoder error");
+                odrive.EncoderError = eerror.Active_Errors;
+                odrive.EncoderDisarmReason = eerror.Disarm_Reason;
+
+                OdrivePublisher.publish(odrive);
+            }
+            break;
+
+            case PUTM_CAN::ODRIVE_GET_IQ_CAN_ID:
+            {
+                PUTM_CAN::Odrive_Get_Iq iq;
+                memcpy(&iq, &random_device_data.data, sizeof(random_device_data.data));
+                odrive.IqCurrent = iq.Iq_Measured;
+                OdrivePublisher.publish(odrive);
+            }
         }
-        }
-        catch(std::runtime_error &err){
-            ROS_ERROR("[ROS2CAN] Error while receiving CAN Frame");
-            std::cout << err.what() << '\n';
-        }
-            //done.
     }
-}   
+} 

@@ -1,7 +1,9 @@
 float32 EncoderEstimation
-float32 front_wheels_angle
-float32 desired_steer_angle
-float32 iq_current
-int8 odrive_state
-int8 odrive_errors
-int8 temperature
+float32 IqCurrent
+int8 OdriveAxisState
+int8 OdriveAxisError
+int8 Temperature
+int8 MotorError
+int8 MotorDisarmReason
+int8 EncoderError
+int8 EncoderDisarmReason

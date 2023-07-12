@@ -52,9 +52,10 @@ add_message_files(
   msg
   FILES
   Apps.msg
+  AqCard.msg
+  AqTsButton.msg
   BmsLv.msg
   BmsHv.msg
-  AqCard.msg
   TractionControl.msg
   Odrive.msg
   Yawprobe.msg
