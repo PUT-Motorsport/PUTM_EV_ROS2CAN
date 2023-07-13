@@ -30,7 +30,9 @@ int main(int argc, char *argv[])
     PUTM_EV_ROS2CAN::BmsLv bmslvros;
 
     //CanRX goes out of scope
-    PUTM_CAN::CanRx can_rx("slcan0", PUTM_CAN::NO_TIMEOUT);
+    PUTM_CAN::CanRx can_rx("can0", PUTM_CAN::NO_TIMEOUT);
+
+    ROS_INFO("[ROS2CAN] Connected to CAN bus");
     can_frame frame = can_rx.receive();
 
     //main loop
@@ -57,7 +59,6 @@ int main(int argc, char *argv[])
             {
                 PUTM_CAN::AQ_ts_button aqTs;
                 memcpy(&aqTs, &random_device_data.data, sizeof(random_device_data.data));
-
                 PUTM_EV_ROS2CAN::AqTsButton aqcard;
 
                 aqcard.AqTsbutton = aqTs.placeholder;
@@ -98,12 +99,6 @@ int main(int argc, char *argv[])
                 bmshvros.averageTemperature = bmshvmain.temp_avg;
 
                 BmshvPublisher.publish(bmshvros);
-            }
-            break;
-
-            case PUTM_CAN::DASH_MAIN_CAN_ID:
-            {
-
             }
             break;
 
@@ -193,7 +188,6 @@ int main(int argc, char *argv[])
             }
             break;
 
-
             case PUTM_CAN::TC_MAIN_CAN_ID:
             {
                 PUTM_CAN::TC_main tc_main;
@@ -206,7 +200,6 @@ int main(int argc, char *argv[])
 
             }
             break;
-
 
             case PUTM_CAN::TC_REAR_SUSPENSION_CAN_ID:
             {
@@ -266,8 +259,6 @@ int main(int argc, char *argv[])
                 odrive.OdriveAxisError = odrivehbeat.Axis_Error;
                 odrive.OdriveAxisState = odrivehbeat.Axis_State;
 
-                //ROS_INFO("Odrive state: %i, error: %i", odrivehbeat.Axis_State, odrivehbeat.Axis_Error);
-
                 OdrivePublisher.publish(odrive);
             }
             break;
@@ -311,6 +302,7 @@ int main(int argc, char *argv[])
                 PUTM_CAN::Odrive_Get_Iq iq;
                 memcpy(&iq, &random_device_data.data, sizeof(random_device_data.data));
                 odrive.IqCurrent = iq.Iq_Measured;
+
                 OdrivePublisher.publish(odrive);
             }
         }
